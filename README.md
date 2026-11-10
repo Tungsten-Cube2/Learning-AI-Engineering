@@ -13,9 +13,11 @@ Bro Code's Python Playlist: [https://www.youtube.com/watch?v=Sg4GMVMdOPo&list=PL
 After learning all about Python (hopefully you learned about APIs), then it's time to start with AI basics.
 
 ### Installing Ollama
-To start using AI APIs locally and for free, use Ollama. It lets you install AI APIs directly onto your computer and lets you run them locally. It also has support for Hugging Face models, though it isn't necessary.
+To start using AI APIs locally and for free, start off with using Ollama. It lets you install AI models directly onto your computer and lets you run them locally. It also has support for Hugging Face models, though it isn't necessary.
 
 To install Ollama, go here: [https://ollama.com/](url)
+
+Later, you can use OpenAI or Anthropic API, but for now, use this.
 
 ### Your First Program
 Now with an AI model installed onto your computer, you can finally start making your first program using Ollama.
@@ -145,4 +147,83 @@ main()
 </details>
 So, after creating a basic chatbot that can remember previous chat history, it will be time to move on...
 
+### AI Automation
+To learn AI automation, you will be learning:
+- Structured Output
+- Tool Calling
+- API Integration
+- Asyncronization
+- AI Workflows and Orchestration
+- Basic Embeddings/RAG (for optimization)
+
+#### Structured Output
+Structured output lets you receive JSON for any specific data. With the JSON, you can do whatever you want. This is done by using the Pydantic library's BaseModel.
+
+To get started, import pydantic and BaseModel, and use it to build a class:
+```python
+from pydantic import BaseModel
+
+class Country(BaseModel):
+  name: str #these str fields get filled out by the AI
+  short_description: str
+  absolute_location: str
+  economy_type: str
+  states_provinces: list[str] #lets you have multiple strings
+  territories: list[str]
+```
+If you need multiple instances of a class, you can also do this:
+```python
+class CountryList(BaseModel):
+    countries: list[Country]
+```
+Now countries can be listed and used by ollama:
+```python
+countries = input("Enter countries here: ")
+response = chat(
+  model='llama3.2:1b',
+  messages=[{'role': 'user', 'content': f"Tell me about {countries}. For each country, give me a short description, an absolute location, the economy type, all states or provinces, and owned territories."}],
+  format=CountryList.model_json_schema(),
+)
+
+countrylist = CountryList.model_validate_json(response.message.content)
+print(countrylist)
+```
+From there, you can do whatever you want with the data.
+```python
+#you can iterate though country names
+for country in countrylist.countries:
+  print(country.name)
+```
+Very good for data processing if needed.
+#### Tool Calling
+Tool calling lets you call functions from a script. This is useful if you need to:
+- Actively call data from an API
+- Perform actions
+- Do things beyond the ai's training
+This is done by, firstly, having a function that can do something and return a value.
+```python
+#this is our first function
+def get_temperature(city: str) -> str:
+  temperatures = {
+    "New York": "22°C",
+    "London": "15°C",
+    "Tokyo": "18°C",
+  } #you can replace temperatures with pulling from a weather api
+  return temperatures.get(city, "Unknown")
+```
+After you have the function, the ai model can be called upon to use the tool when needed.
+```python
+messages = [{"role": "user", "content": "What is the temperature in New York?"}]
+response = chat(model="llama3.2:1b", messages=messages, tools=[get_temperature])
+#you then can use the call the AI model made to get the temperature for the temperature
+call = response.message.tool_calls[0]
+result = get_temperature(**call.function.arguments)
+```
+Finally, you can add the result to the messages.
+```python
+messages.append({"role": "tool", "tool_name": call.function.name, "content": str(result)})
+
+final_response = chat(model="llama3.2:1b", messages=messages, tools=[get_temperature])
+print(final_response.message.content)
+```
 # W.I.P.
