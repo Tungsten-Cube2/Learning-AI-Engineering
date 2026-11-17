@@ -1,6 +1,4 @@
 from ollama import chat
-from pathlib import Path
-import requests
 
 def get_temperature(city: str) -> str:
   temperatures = {

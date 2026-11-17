@@ -9,7 +9,7 @@ Harvard CS50P: [https://youtube.com/playlist?list=PLhQjrBD2T3817j24-GogXmWqO5Q5v
 
 Bro Code's Python Playlist: [https://www.youtube.com/watch?v=Sg4GMVMdOPo&list=PLZPZq0r_RZOOkUQbat8LyQii36cJf2SWT](url)
 
-## Starting with AI APIs
+## Starting with AI APIs (Ollama)
 After learning all about Python (hopefully you learned about APIs), then it's time to start with AI basics.
 
 ### Installing Ollama
@@ -147,7 +147,7 @@ main()
 </details>
 So, after creating a basic chatbot that can remember previous chat history, it will be time to move on...
 
-### AI Automation
+## AI Automation
 To learn AI automation, you will be learning:
 - Structured Output
 - Tool Calling
@@ -156,7 +156,7 @@ To learn AI automation, you will be learning:
 - AI Workflows and Orchestration
 - Basic Embeddings/RAG (for optimization)
 
-#### Structured Output
+### Structured Output
 Structured output lets you receive JSON for any specific data. With the JSON, you can do whatever you want. This is done by using the Pydantic library's BaseModel.
 
 To get started, import pydantic and BaseModel, and use it to build a class:
@@ -195,7 +195,7 @@ for country in countrylist.countries:
   print(country.name)
 ```
 Very good for data processing if needed.
-#### Tool Calling
+### Tool Calling
 Tool calling lets you call functions from a script. This is useful if you need to:
 - Actively call data from an API
 - Perform actions
@@ -225,5 +225,60 @@ messages.append({"role": "tool", "tool_name": call.function.name, "content": str
 
 final_response = chat(model="llama3.2:1b", messages=messages, tools=[get_temperature])
 print(final_response.message.content)
+```
+
+You can also call tools in paralell via a for loop.
+
+```python
+# the two funcitons are population() and established()
+for call in response.message.tool_calls:
+    if call.function.name == 'population':
+        result = population(**call.function.arguments)
+    elif call.function.name == 'established':
+        result = established(**call.function.arguments)
+    else:
+        result = 'Unknown tool'
+    messages.append({"role": "tool", "tool_name": call.function.name, "content": str(result)})
+```
+
+As well as calling tools sequentially.
+
+```python
+from ollama import chat, ChatResponse
+
+def add(a: int, b: int) -> int:
+  return a + b
+
+def multiply(a: int, b: int) -> int:
+  return a * b
+
+def subtract(a: int, b:int) -> int:
+   return a - b
+
+available_functions = {
+  'add': add,
+  'multiply': multiply,
+  'subtract': subtract,
+}
+
+messages = [{'role': 'user', 'content': 'What is (11434+12341)*412-12?'}]
+while True:
+    response: ChatResponse = chat(
+        model='qwen2.5:7b',
+        messages=messages,
+        tools=[add, multiply, subtract],
+    )
+    messages.append(response.message)
+    print("Content: ", response.message.content)
+    if response.message.tool_calls:
+        for tc in response.message.tool_calls:
+            if tc.function.name in available_functions:
+                print(f"Calling {tc.function.name} with arguments {tc.function.arguments}")
+                result = available_functions[tc.function.name](**tc.function.arguments)
+                print(f"Result: {result}")
+                # add the tool result to the messages
+                messages.append({'role': 'tool', 'tool_name': tc.function.name, 'content': str(result)})
+    else:
+        break
 ```
 # W.I.P.
